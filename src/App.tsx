@@ -46,7 +46,8 @@ function App() {
       3, 3,  // From Prioritized
       4, 4, 4,  // From Routine
       5, 5, 5,  // From Monitor
-      8, 6, 7  // From various states to final states
+      8, 6, 7,  // From various states to final states
+      7  // New link from In Progress
     ],
     target: [
       1, 2,  // To Analyzed/Not Analyzed
@@ -55,7 +56,8 @@ function App() {
       6, 7,  // From Prioritized to Queued/In Progress
       6, 8, 9,  // From Routine to various states
       6, 8, 9,  // From Monitor to various states
-      9, 7, 10  // Final flows
+      9, 7, 10, // Final flows
+      8  // New link to Awaiting Approval
     ],
     value: [
       95, 5,  // Total Findings distribution
@@ -64,7 +66,8 @@ function App() {
       0.05, 0.05,  // Prioritized flows
       2, 2, 0.9,  // Routine flows
       45, 45, 5,  // Monitor flows
-      3, 47, 47.1  // Final flows
+      3, 47, 47.1, // Final flows
+      10  // New value for In Progress to Awaiting Approval
     ],
     color: [
       'rgba(52, 152, 219, 0.6)', 'rgba(155, 89, 182, 0.6)',  // Total to Analyzed/Not Analyzed
@@ -73,7 +76,8 @@ function App() {
       'rgba(149, 165, 166, 0.6)', 'rgba(211, 84, 0, 0.6)',  // Prioritized flows
       'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)', 'rgba(41, 128, 185, 0.6)',  // Routine flows
       'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)', 'rgba(41, 128, 185, 0.6)',  // Monitor flows
-      'rgba(41, 128, 185, 0.6)', 'rgba(211, 84, 0, 0.6)', 'rgba(26, 188, 156, 0.6)'   // Final flows
+      'rgba(41, 128, 185, 0.6)', 'rgba(211, 84, 0, 0.6)', 'rgba(26, 188, 156, 0.6)',   // Final flows
+      'rgba(142, 68, 173, 0.6)'  // New color for In Progress to Awaiting Approval
     ]
   };
 
@@ -175,37 +179,60 @@ function App() {
       visibleNodes.has(link.target)
     );
 
-    // Calculate scaling factor for each source node
+    // Calculate scaling factor for each source and target node
     const sourceValueSums = new Map();
+    const targetValueSums = new Map();
     const originalSourceValueSums = new Map();
+    const originalTargetValueSums = new Map();
 
     // Calculate original sums
     allLinks.source.forEach((source, i) => {
       originalSourceValueSums.set(source, (originalSourceValueSums.get(source) || 0) + allLinks.value[i]);
+      const target = allLinks.target[i];
+      originalTargetValueSums.set(target, (originalTargetValueSums.get(target) || 0) + allLinks.value[i]);
     });
 
     // Calculate sums for visible links
     validLinks.forEach(link => {
       sourceValueSums.set(link.source, (sourceValueSums.get(link.source) || 0) + link.value);
+      targetValueSums.set(link.target, (targetValueSums.get(link.target) || 0) + link.value);
     });
 
-    // Scale the values
-    const scaledLinks = validLinks.map(link => {
-      const originalSum = originalSourceValueSums.get(link.source);
-      const newSum = sourceValueSums.get(link.source);
-      const scaleFactor = originalSum / newSum;
-      
+    // Adjust the link values for visible nodes
+    const adjustedLinks = validLinks.map(link => {
+      const originalSourceSum = originalSourceValueSums.get(link.source);
+      const newSourceSum = sourceValueSums.get(link.source);
+      const scaleFactor = originalSourceSum / newSourceSum;
+
+      // Adjust the link value based on the visible proportions
+      const adjustedValue = link.value * scaleFactor;
+
       return {
         ...link,
-        value: link.value * scaleFactor
+        value: adjustedValue
+      };
+    });
+
+    // Recalculate the link values to ensure they sum up to the total value of the source node
+    const recalculatedLinks = adjustedLinks.map(link => {
+      const totalVisibleValue = adjustedLinks
+        .filter(l => l.source === link.source)
+        .reduce((sum, l) => sum + l.value, 0);
+
+      const proportion = link.value / totalVisibleValue;
+      const recalculatedValue = originalSourceValueSums.get(link.source) * proportion;
+
+      return {
+        ...link,
+        value: recalculatedValue
       };
     });
 
     const filteredLinks = {
-      source: scaledLinks.map(link => indexMap.get(link.source)),
-      target: scaledLinks.map(link => indexMap.get(link.target)),
-      value: scaledLinks.map(link => link.value),
-      color: scaledLinks.map(link => link.color)
+      source: recalculatedLinks.map(link => indexMap.get(link.source)),
+      target: recalculatedLinks.map(link => indexMap.get(link.target)),
+      value: recalculatedLinks.map(link => link.value),
+      color: recalculatedLinks.map(link => link.color)
     };
 
     return { nodes: filteredNodes, links: filteredLinks };
