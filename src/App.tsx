@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Plot from 'react-plotly.js';
 import { ToggleLeft, ToggleRight } from 'lucide-react';
 
@@ -17,24 +17,26 @@ function App() {
       'In Progress',
       'Awaiting Approval',
       'Exception Approved',
-      'Remediated'
+      'Remediated',
+      'Awaiting Validation'  // New phase
     ],
-    x: [0.1, 0.3, 0.3, 0.5, 0.5, 0.5, 0.7, 0.7, 0.7, 0.7, 0.9],
-    y: [0.5, 0.3, 0.7, 0.2, 0.5, 0.8, 0.3, 0.6, 0.8, 0.9, 0.5],
+    x: [0.1, 0.3, 0.3, 0.5, 0.5, 0.5, 0.7, 0.7, 0.7, 0.7, 0.9, 0.8],
+    y: [0.5, 0.3, 0.7, 0.2, 0.5, 0.8, 0.3, 0.6, 0.8, 0.9, 0.5, 0.5],
     pad: 20,
     thickness: 20,
     color: [
-      '#2C3E50',  // Total Findings - Dark Blue Gray
-      '#3498DB',  // Analyzed - Blue
-      '#9B59B6',  // Not Analyzed - Purple
-      '#E74C3C',  // Prioritized - Red
-      '#F39C12',  // Routine - Orange
-      '#27AE60',  // Monitor - Green
-      '#95A5A6',  // Queued - Gray
-      '#D35400',  // In Progress - Dark Orange
-      '#8E44AD',  // Awaiting Approval - Dark Purple
-      '#2980B9',  // Exception Approved - Dark Blue
-      '#1ABC9C'   // Remediated - Turquoise
+      '#2C3E50',  // Total Findings
+      '#3498DB',  // Analyzed
+      '#9B59B6',  // Not Analyzed
+      '#E74C3C',  // Prioritized
+      '#F39C12',  // Routine
+      '#27AE60',  // Monitor
+      '#95A5A6',  // Queued
+      '#D35400',  // In Progress
+      '#8E44AD',  // Awaiting Approval
+      '#2980B9',  // Exception Approved
+      '#1ABC9C',  // Remediated
+      '#16A085'   // Awaiting Validation
     ]
   };
 
@@ -47,7 +49,9 @@ function App() {
       4, 4, 4,  // From Routine
       5, 5, 5,  // From Monitor
       8, 6, 7,  // From various states to final states
-      7  // New link from In Progress
+      7,  // In Progress to Awaiting Approval
+      7,  // In Progress to Awaiting Validation
+      11  // Awaiting Validation to Remediated
     ],
     target: [
       1, 2,  // To Analyzed/Not Analyzed
@@ -56,8 +60,10 @@ function App() {
       6, 7,  // From Prioritized to Queued/In Progress
       6, 8, 9,  // From Routine to various states
       6, 8, 9,  // From Monitor to various states
-      9, 7, 10, // Final flows
-      8  // New link to Awaiting Approval
+      9, 7, 11,  // Modified: now goes to Awaiting Validation instead of Remediated
+      8,  // In Progress to Awaiting Approval (unchanged)
+      11,  // In Progress to Awaiting Validation
+      10   // Awaiting Validation to Remediated
     ],
     value: [
       95, 5,  // Total Findings distribution
@@ -66,8 +72,10 @@ function App() {
       0.05, 0.05,  // Prioritized flows
       2, 2, 0.9,  // Routine flows
       45, 45, 5,  // Monitor flows
-      3, 47, 47.1, // Final flows
-      10  // New value for In Progress to Awaiting Approval
+      3, 47, 23.5,  // Various flows
+      10,  // In Progress to Awaiting Approval (unchanged)
+      23.6,  // In Progress to Awaiting Validation
+      47.1  // Awaiting Validation to Remediated
     ],
     color: [
       'rgba(52, 152, 219, 0.6)', 'rgba(155, 89, 182, 0.6)',  // Total to Analyzed/Not Analyzed
@@ -76,8 +84,10 @@ function App() {
       'rgba(149, 165, 166, 0.6)', 'rgba(211, 84, 0, 0.6)',  // Prioritized flows
       'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)', 'rgba(41, 128, 185, 0.6)',  // Routine flows
       'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)', 'rgba(41, 128, 185, 0.6)',  // Monitor flows
-      'rgba(41, 128, 185, 0.6)', 'rgba(211, 84, 0, 0.6)', 'rgba(26, 188, 156, 0.6)',   // Final flows
-      'rgba(142, 68, 173, 0.6)'  // New color for In Progress to Awaiting Approval
+      'rgba(41, 128, 185, 0.6)', 'rgba(211, 84, 0, 0.6)', 'rgba(22, 160, 133, 0.6)',  // Various flows
+      'rgba(142, 68, 173, 0.6)',  // In Progress to Awaiting Approval
+      'rgba(22, 160, 133, 0.6)',  // In Progress to Awaiting Validation
+      'rgba(26, 188, 156, 0.6)'   // Awaiting Validation to Remediated
     ]
   };
 
@@ -111,8 +121,8 @@ function App() {
       if (visited.has(nodeId)) return false;
       visited.add(nodeId);
 
-      // Base case: if this is the final node (Remediated)
-      if (nodeId === 10 && visibleNodes.has(nodeId)) return true;
+      // Base case: if this is either Total Findings (start) or Remediated (end)
+      if ((nodeId === 0 || nodeId === 11) && visibleNodes.has(nodeId)) return true;
 
       // Check outgoing connections
       for (const target of outgoingConnections.get(nodeId)) {
