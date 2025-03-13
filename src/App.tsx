@@ -7,34 +7,28 @@ function App() {
 
   const allNodes = {
     label: [
-      'Total Findings', 
       'Analyzed', 
-      'Not Analyzed',
       'Prioritized',
       'Routine',
       'Monitor',
       'Queued',
       'In Progress',
       'Awaiting Approval',
-      'Exception Approved',
       'Remediated',
-      'Awaiting Validation'  // New phase
+      'Awaiting Validation'
     ],
-    x: [0.1, 0.3, 0.3, 0.5, 0.5, 0.5, 0.7, 0.7, 0.7, 0.7, 0.9, 0.8],
-    y: [0.5, 0.3, 0.7, 0.2, 0.5, 0.8, 0.3, 0.6, 0.8, 0.9, 0.5, 0.5],
+    x: [0.1, 0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.9, 0.7],
+    y: [0.5, 0.2, 0.5, 0.8, 0.3, 0.6, 0.8, 0.5, 0.5],
     pad: 20,
     thickness: 20,
     color: [
-      '#2C3E50',  // Total Findings
       '#3498DB',  // Analyzed
-      '#9B59B6',  // Not Analyzed
       '#E74C3C',  // Prioritized
       '#F39C12',  // Routine
       '#27AE60',  // Monitor
       '#95A5A6',  // Queued
       '#D35400',  // In Progress
       '#8E44AD',  // Awaiting Approval
-      '#2980B9',  // Exception Approved
       '#1ABC9C',  // Remediated
       '#16A085'   // Awaiting Validation
     ]
@@ -42,49 +36,43 @@ function App() {
 
   const allLinks = {
     source: [
-      0, 0,  // From Total Findings
-      1, 1, 1,  // From Analyzed
-      2, 2, 2,  // From Not Analyzed
-      3, 3,  // From Prioritized
-      4, 4, 4,  // From Routine
-      5, 5, 5,  // From Monitor
-      8, 6, 7,  // From various states to final states
-      7,  // In Progress to Awaiting Approval
-      7,  // In Progress to Awaiting Validation
-      11  // Awaiting Validation to Remediated
+      0, 0, 0,  // From Analyzed
+      1, 1,  // From Prioritized
+      2, 2,  // From Routine
+      3, 3,  // From Monitor
+      4, 5,  // From Queued, In Progress
+      5,  // In Progress to Awaiting Approval
+      5,  // In Progress to Awaiting Validation
+      8  // Awaiting Validation to Remediated
     ],
     target: [
-      1, 2,  // To Analyzed/Not Analyzed
-      3, 4, 5,  // From Analyzed to Priority/Routine/Monitor
-      3, 4, 5,  // From Not Analyzed to Priority/Routine/Monitor
-      6, 7,  // From Prioritized to Queued/In Progress
-      6, 8, 9,  // From Routine to various states
-      6, 8, 9,  // From Monitor to various states
-      9, 7, 11,  // Modified: now goes to Awaiting Validation instead of Remediated
-      8,  // In Progress to Awaiting Approval (unchanged)
-      11,  // In Progress to Awaiting Validation
-      10   // Awaiting Validation to Remediated
+      1, 2, 3,  // From Analyzed to Priority/Routine/Monitor
+      4, 5,  // From Prioritized to Queued/In Progress
+      4, 6,  // From Routine to various states
+      4, 6,  // From Monitor to various states
+      5, 8,  // To In Progress, Awaiting Validation
+      6,  // In Progress to Awaiting Approval
+      8,  // In Progress to Awaiting Validation
+      7   // Awaiting Validation to Remediated
     ],
     value: [
-      95, 5,  // Total Findings distribution
-      0.095, 4.655, 90.25,  // Analyzed distribution
-      0.005, 0.245, 4.75,  // Not Analyzed distribution
-      0.05, 0.05,  // Prioritized flows
-      2, 2, 0.9,  // Routine flows
-      45, 45, 5,  // Monitor flows
-      3, 47, 23.5,  // Various flows
-      10,  // In Progress to Awaiting Approval (unchanged)
+      5,    // Analyzed to Prioritized (5%)
+      19,   // Analyzed to Routine (19% of remaining 95%)
+      76,   // Analyzed to Monitor (76% of remaining 95%)
+      2.5, 2.5,  // Prioritized flows
+      9.5, 9.5,  // Routine flows
+      38, 38,  // Monitor flows
+      47, 23.5,  // Various flows
+      10,  // In Progress to Awaiting Approval
       23.6,  // In Progress to Awaiting Validation
       47.1  // Awaiting Validation to Remediated
     ],
     color: [
-      'rgba(52, 152, 219, 0.6)', 'rgba(155, 89, 182, 0.6)',  // Total to Analyzed/Not Analyzed
       'rgba(231, 76, 60, 0.6)', 'rgba(243, 156, 18, 0.6)', 'rgba(39, 174, 96, 0.6)',  // Analyzed to Priority/Routine/Monitor
-      'rgba(231, 76, 60, 0.6)', 'rgba(243, 156, 18, 0.6)', 'rgba(39, 174, 96, 0.6)',  // Not Analyzed to Priority/Routine/Monitor
       'rgba(149, 165, 166, 0.6)', 'rgba(211, 84, 0, 0.6)',  // Prioritized flows
-      'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)', 'rgba(41, 128, 185, 0.6)',  // Routine flows
-      'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)', 'rgba(41, 128, 185, 0.6)',  // Monitor flows
-      'rgba(41, 128, 185, 0.6)', 'rgba(211, 84, 0, 0.6)', 'rgba(22, 160, 133, 0.6)',  // Various flows
+      'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)',  // Routine flows
+      'rgba(149, 165, 166, 0.6)', 'rgba(142, 68, 173, 0.6)',  // Monitor flows
+      'rgba(211, 84, 0, 0.6)', 'rgba(22, 160, 133, 0.6)',  // Various flows
       'rgba(142, 68, 173, 0.6)',  // In Progress to Awaiting Approval
       'rgba(22, 160, 133, 0.6)',  // In Progress to Awaiting Validation
       'rgba(26, 188, 156, 0.6)'   // Awaiting Validation to Remediated
